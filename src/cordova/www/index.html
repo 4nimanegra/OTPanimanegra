@@ -1,0 +1,116 @@
+<html>
+<script>
+
+if(localStorage.getItem("configuration") == null){
+
+	var data= {};
+
+	data['time']=30000;
+	data['userpass']="MYSECRETKEY";
+	data['size']=6;
+
+
+	data = JSON.stringify(data);
+	localStorage.setItem("configuration",data);
+
+}
+
+var data = localStorage.getItem("configuration");
+data = JSON.parse(data);
+
+</script>
+
+<head>
+	<script src="cordova.js"></script>
+	<script src="hmac-sha256.js"></script>
+</head>
+<body>
+	<center>
+		<div id="pass" size="64"></div><br>
+		<div id="barra"></div>
+		<input type="hidden" name="userpass" id="userpass" maxlength="32" size="32" value=""></input><br>
+		<button onClick="scanMe();">Scan code</button>
+	</center>
+</body>
+
+<script>
+
+	document.getElementById("userpass").value=data['userpass'];
+	document.getElementById("pass").size=data['size'];
+
+	function scanMe(){
+
+		cordova.plugins.barcodeScanner.scan(
+
+			function (ok){
+
+				if(!ok.cancelled){
+
+					if(ok.format == "QR_CODE"){
+
+						data['userpass']=ok.text;
+						localStorage.setItem("configuration",JSON.stringify(data));
+						document.getElementById("userpass").value=data['userpass'];
+
+					}
+
+				}
+
+			},
+
+			function(error){
+
+			}
+		);
+
+		
+
+	}
+
+	function generate(){
+
+		date = new Date();
+		timestamp = date.getTime();
+
+		i=(timestamp%data['time']);
+		i=data['size']*(i/data['time']);
+
+		barra="";
+
+		ii=i;
+
+		while(ii > 0){
+
+			barra=barra+"*";
+			ii=ii-1;
+
+		}
+
+		ii=1;
+
+		while(ii < (data['size']-i)){
+
+			barra=barra+"_";
+
+			ii=ii+1;
+
+		}
+
+
+		document.getElementById("barra").innerHTML=barra;
+
+		timestamp=""+parseInt(timestamp/data['time']);
+
+		mypass=""+CryptoJS.HmacSHA256(timestamp,document.getElementById("userpass").value);
+		
+		document.getElementById("pass").innerHTML=mypass.substr(0,6);
+		
+		setTimeout(generate, 1000);
+
+	}
+
+	generate();
+
+</script>
+
+</html>
